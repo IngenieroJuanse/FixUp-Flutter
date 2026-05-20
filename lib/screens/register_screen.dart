@@ -1,70 +1,311 @@
-import 'package:flutter/material.dart';
-import '../widgets/fixup_button.dart';
-import '../widgets/fixup_text_field.dart';
+﻿import 'package:flutter/material.dart';
 
-class RegisterScreen extends StatelessWidget {
+class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _cedulaController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  String _selectedRole = 'Fixer';
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _cedulaController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    const backgroundColor = Color(0xFFF8F8FC);
+    const primaryGold = Color(0xFFC4A36C);
+    const borderColor = Color(0xFFE6E2D8);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8FC),
-      appBar: AppBar(
-        title: const Text('Crear cuenta'),
-        centerTitle: true,
-        backgroundColor: const Color(0xFFF8F8FC),
-        elevation: 0,
-      ),
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const CircleAvatar(
-                radius: 46,
-                backgroundColor: Color(0xFFE8E6FF),
-                child: Icon(
-                  Icons.person_add_alt_1,
-                  color: Color(0xFF5B4BFF),
-                  size: 42,
+              const SizedBox(height: 28),
+              const Center(
+                child: Text(
+                  'FixUp',
+                  style: TextStyle(
+                    fontSize: 46,
+                    fontWeight: FontWeight.w900,
+                    color: primaryGold,
+                  ),
                 ),
               ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Text(
+                    'Iniciar Sesión',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black38,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    '/',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black38,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Registrarse',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: primaryGold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 36),
+              _buildTextField(
+                controller: _emailController,
+                hintText: 'email@domain.com',
+                borderColor: borderColor,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _cedulaController,
+                hintText: 'C.C.',
+                borderColor: borderColor,
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _passwordController,
+                hintText: 'Contraseña',
+                borderColor: borderColor,
+                obscureText: _obscurePassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.black45,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Selecciona tu rol:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildRoleButton('Fixer', primaryGold, borderColor),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildRoleButton('Cliente', primaryGold, borderColor),
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
-              const Text(
-                'Regístrate en FixUp',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryGold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Registrarse',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Encuentra servicios confiables o publica tus habilidades.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54),
+              const SizedBox(height: 30),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: Colors.black12,
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: Colors.black12,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 28),
-              const FixUpTextField(
-                hint: 'Nombre completo',
-                icon: Icons.person_outline,
-              ),
-              const SizedBox(height: 16),
-              const FixUpTextField(
-                hint: 'Correo electrónico',
-                icon: Icons.email_outlined,
-              ),
-              const SizedBox(height: 16),
-              const FixUpTextField(
-                hint: 'Teléfono',
-                icon: Icons.phone_outlined,
-              ),
-              const SizedBox(height: 16),
-              const FixUpTextField(
-                hint: 'Contraseña',
-                icon: Icons.lock_outline,
-                obscureText: true,
+              const SizedBox(height: 30),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSocialButton(
+                      label: 'Continuar con Google',
+                      icon: Icons.g_mobiledata,
+                      borderColor: primaryGold,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildSocialButton(
+                      label: 'Continuar con Apple',
+                      icon: Icons.apple,
+                      borderColor: primaryGold,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
-              FixUpButton(text: 'Registrarme'),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required Color borderColor,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.black38),
+        filled: true,
+        fillColor: Colors.white,
+        suffixIcon: suffixIcon,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: borderColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: borderColor, width: 1.2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleButton(String role, Color accentColor, Color borderColor) {
+    final bool selected = _selectedRole == role;
+    return SizedBox(
+      height: 52,
+      child: OutlinedButton(
+        onPressed: () {
+          setState(() {
+            _selectedRole = role;
+          });
+        },
+        style: OutlinedButton.styleFrom(
+          backgroundColor: selected ? const Color(0x1FC4A36C) : Colors.white,
+          side: BorderSide(color: selected ? accentColor : borderColor),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          foregroundColor: selected ? accentColor : Colors.black87,
+        ),
+        child: Text(
+          role,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: selected ? accentColor : Colors.black87,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialButton({
+    required String label,
+    required IconData icon,
+    required Color borderColor,
+  }) {
+    return SizedBox(
+      height: 52,
+      child: OutlinedButton(
+        onPressed: () {},
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: borderColor),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          foregroundColor: borderColor,
+          backgroundColor: Colors.white,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: borderColor),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: borderColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,154 +1,375 @@
 import 'package:flutter/material.dart';
-import '../widgets/fixup_button.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ReviewModel {
+  final String id;
+  final String authorName;
+  final String authorImageUrl;
+  final String serviceTitle;
+  final int rating;
+  final String comment;
+  final String date;
+  final List<String> likedBy;
+
+  ReviewModel({
+    required this.id,
+    required this.authorName,
+    this.authorImageUrl = '',
+    this.serviceTitle = '',
+    this.rating = 0,
+    this.comment = '',
+    this.date = '',
+    List<String>? likedBy,
+  }) : likedBy = likedBy ?? [];
+}
+
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isLoading = false;
+  bool _isImageUploading = false;
+  String _profileImageUrl = '';
+  String _name = 'Juan Pérez';
+  String _role = 'Cliente estrella';
+
+  final List<ReviewModel> _reviews = [
+    ReviewModel(
+      id: 'r1',
+      authorName: 'María Gómez',
+      rating: 5,
+      comment: 'Excelente servicio, muy puntual y profesional.',
+      date: '2024-06-01',
+      likedBy: ['u1', 'u2'],
+      serviceTitle: 'Plomería',
+    ),
+    ReviewModel(
+      id: 'r2',
+      authorName: 'Carlos Ruiz',
+      rating: 4,
+      comment: 'Buen trabajo, pero tardó un poco.',
+      date: '2024-05-12',
+      likedBy: ['u3'],
+      serviceTitle: 'Electricidad',
+    ),
+  ];
+
+  void _toggleLike(String reviewId) {
+    setState(() {
+      final r = _reviews.firstWhere((e) => e.id == reviewId);
+      if (r.likedBy.contains('me')) {
+        r.likedBy.remove('me');
+      } else {
+        r.likedBy.add('me');
+      }
+    });
+  }
+
+  void _deleteReview(String reviewId) {
+    setState(() {
+      _reviews.removeWhere((r) => r.id == reviewId);
+    });
+  }
+
+  void _editReview(String reviewId, int rating, String comment) {
+    setState(() {
+      final idx = _reviews.indexWhere((r) => r.id == reviewId);
+      if (idx != -1) {
+        _reviews[idx] = ReviewModel(
+          id: _reviews[idx].id,
+          authorName: _reviews[idx].authorName,
+          authorImageUrl: _reviews[idx].authorImageUrl,
+          serviceTitle: _reviews[idx].serviceTitle,
+          rating: rating,
+          comment: comment,
+          date: _reviews[idx].date,
+          likedBy: _reviews[idx].likedBy,
+        );
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    const backgroundColor = Color(0xFFF8F8FC);
+    const softFawn = Color(0xFFC4A36C);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8FC),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('Mi perfil'),
-        centerTitle: true,
-        backgroundColor: const Color(0xFFF8F8FC),
+        backgroundColor: backgroundColor,
         elevation: 0,
+        leading: IconButton(
+          onPressed: () => _showEditProfileDialog(context),
+          icon: const Icon(Icons.edit),
+          color: softFawn,
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.settings_outlined),
+            color: softFawn,
+          )
+        ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
+        child: _isLoading && _reviews.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      onTap: _isImageUploading ? null : () {},
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              width: 130,
+                              height: 130,
+                              color: Colors.white,
+                              child: _profileImageUrl.isEmpty
+                                  ? const Icon(Icons.person, size: 64, color: Colors.black26)
+                                  : Image.network(_profileImageUrl, fit: BoxFit.cover),
+                            ),
+                          ),
+                          if (_isImageUploading)
+                            Container(
+                              width: 130,
+                              height: 130,
+                              decoration: BoxDecoration(
+                                color: const Color(0x66000000),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(color: Colors.white),
+                              ),
+                            ),
+                          Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: softFawn,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _name,
+                      style: const TextStyle(fontSize: 26, fontWeight: FontWeight.normal, color: softFawn),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _role,
+                      style: const TextStyle(fontSize: 14, color: Colors.black54),
+                    ),
+                    const SizedBox(height: 36),
+
+                    // Reviews section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Mis Reseñas',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_reviews.isEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 32),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Aún no has realizado reseñas.',
+                                style: TextStyle(color: Colors.black54),
+                              ),
+                            )
+                          else
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _reviews.length,
+                              separatorBuilder: (context, index) => const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final r = _reviews[index];
+                                return _ReviewItem(
+                                  review: r,
+                                  onLike: () => _toggleLike(r.id),
+                                  onDelete: () => _deleteReview(r.id),
+                                  onEdit: (rating, comment) => _editReview(r.id, rating, comment),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context) {
+    final nameController = TextEditingController(text: _name);
+    final phoneController = TextEditingController();
+    final addressController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Editar Información Personal'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const CircleAvatar(
-              radius: 54,
-              backgroundColor: Color(0xFFE8E6FF),
-              child: Icon(
-                Icons.person,
-                color: Color(0xFF5B4BFF),
-                size: 58,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Center(
-              child: Text(
-                'Violeta Martínez',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Center(
-              child: Text(
-                'Cliente FixUp',
-                style: TextStyle(color: Colors.black54),
-              ),
-            ),
-            const SizedBox(height: 28),
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nombre')),
+            TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Teléfono')),
+            TextField(controller: addressController, decoration: const InputDecoration(labelText: 'Dirección')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _name = nameController.text;
+              });
+              Navigator.of(context).pop();
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewItem extends StatelessWidget {
+  final ReviewModel review;
+  final VoidCallback onLike;
+  final VoidCallback onDelete;
+  final void Function(int, String) onEdit;
+
+  const _ReviewItem({
+    required this.review,
+    required this.onLike,
+    required this.onDelete,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isLiked = review.likedBy.contains('me');
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
-              children: const [
-                _StatCard(title: 'Servicios', value: '12'),
-                SizedBox(width: 12),
-                _StatCard(title: 'Favoritos', value: '5'),
-                SizedBox(width: 12),
-                _StatCard(title: 'Reviews', value: '8'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.grey.shade200,
+                  child: review.authorImageUrl.isEmpty
+                      ? const Icon(Icons.person, color: Colors.black26)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(review.authorName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      if (review.serviceTitle.isNotEmpty)
+                        Text('comentó sobre: ${review.serviceTitle}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                    ],
+                  ),
+                ),
+                Column(
+                  children: [
+                    IconButton(onPressed: () => _showEditDialog(context), icon: const Icon(Icons.edit, size: 18)),
+                    IconButton(onPressed: onDelete, icon: const Icon(Icons.delete, size: 18, color: Colors.red)),
+                  ],
+                )
               ],
             ),
-            const SizedBox(height: 28),
-            const _ProfileOption(
-              icon: Icons.history,
-              title: 'Historial de servicios',
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: List.generate(5, (i) => Icon(i < review.rating ? Icons.star : Icons.star_border, color: const Color(0xFFFFB300), size: 16)),
+                ),
+                InkWell(
+                  onTap: onLike,
+                  child: Row(
+                    children: [
+                      Icon(isLiked ? Icons.favorite : Icons.favorite_border, color: isLiked ? Colors.red : Colors.grey, size: 18),
+                      const SizedBox(width: 6),
+                      Text(review.likedBy.length.toString(), style: const TextStyle(fontSize: 14, color: Colors.black54)),
+                    ],
+                  ),
+                )
+              ],
             ),
-            const _ProfileOption(
-              icon: Icons.favorite_border,
-              title: 'Servicios favoritos',
-            ),
-            const _ProfileOption(
-              icon: Icons.payment_outlined,
-              title: 'Métodos de pago',
-            ),
-            const _ProfileOption(
-              icon: Icons.settings_outlined,
-              title: 'Configuración',
-            ),
-            const SizedBox(height: 20),
-            FixUpButton(text: 'Editar perfil'),
-            const SizedBox(height: 12),
-            FixUpButton(text: 'Cerrar sesión', outlined: true),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-
-  const _StatCard({
-    required this.title,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        height: 84,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                color: Color(0xFF5B4BFF),
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
+            const SizedBox(height: 8),
+            Text(review.comment),
             const SizedBox(height: 4),
-            Text(
-              title,
-              style: const TextStyle(color: Colors.black54, fontSize: 12),
-            ),
+            Text(review.date, style: const TextStyle(fontSize: 12, color: Colors.black54)),
           ],
         ),
       ),
     );
   }
-}
 
-class _ProfileOption extends StatelessWidget {
-  final IconData icon;
-  final String title;
+  void _showEditDialog(BuildContext context) {
+    final ratingController = TextEditingController(text: review.rating.toString());
+    final commentController = TextEditingController(text: review.comment);
 
-  const _ProfileOption({
-    required this.icon,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF5B4BFF)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Editar Reseña'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: ratingController, decoration: const InputDecoration(labelText: 'Rating (1-5)')),
+            TextField(controller: commentController, decoration: const InputDecoration(labelText: 'Comentario')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () {
+              final rating = int.tryParse(ratingController.text) ?? review.rating;
+              onEdit(rating, commentController.text);
+              Navigator.of(context).pop();
+            },
+            child: const Text('Guardar'),
           ),
-          const Icon(Icons.chevron_right),
         ],
       ),
     );
