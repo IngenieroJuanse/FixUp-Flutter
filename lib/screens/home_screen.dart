@@ -123,10 +123,12 @@ class _FeedHeaderActions extends StatelessWidget {
           child: const Text('Asistente'),
         ),
         const SizedBox(width: 8),
+        // ✅ CAMBIO: Botón "Siguiendo" en color amarillo arena
         OutlinedButton(
           style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: Colors.white24),
-            foregroundColor: Colors.white,
+            side: const BorderSide(color: Color(0xFFD4B483)),
+            foregroundColor: const Color(0xFFD4B483),
+            backgroundColor: Colors.transparent,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
@@ -154,6 +156,16 @@ class _FeedFeaturedCard extends StatelessWidget {
         height: 200,
         width: double.infinity,
         fit: BoxFit.cover,
+        // ✅ CAMBIO: errorBuilder para imágenes que no cargan
+        errorBuilder: (context, error, stackTrace) => Container(
+          height: 200,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: const Color(0xFF3A3650),
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: const Icon(Icons.broken_image, color: Colors.white38, size: 48),
+        ),
       ),
     );
   }
@@ -212,6 +224,13 @@ class _FeedCategoryCard extends StatelessWidget {
               height: 76,
               width: 112,
               fit: BoxFit.cover,
+              // ✅ CAMBIO: errorBuilder para imágenes que no cargan
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 76,
+                width: 112,
+                color: const Color(0xFF3A3650),
+                child: const Icon(Icons.broken_image, color: Colors.white38),
+              ),
             ),
           ),
           Expanded(
@@ -254,6 +273,13 @@ class _FeedPublicationCard extends StatelessWidget {
               height: 132,
               width: double.infinity,
               fit: BoxFit.cover,
+              // ✅ CAMBIO: errorBuilder para imágenes que no cargan
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 132,
+                width: double.infinity,
+                color: const Color(0xFF3A3650),
+                child: const Icon(Icons.broken_image, color: Colors.white38),
+              ),
             ),
           ),
           Padding(

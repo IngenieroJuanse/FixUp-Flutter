@@ -1,150 +1,619 @@
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
-import '../widgets/fixup_button.dart';
 
-class ServiceDetailScreen extends StatelessWidget {
-  const ServiceDetailScreen({super.key});
+// ─── Colors ───────────────────────────────────────────────────────────────────
+
+const _bg = Color(0xFF111111);
+const _card = Color(0xFF252525);
+const _fawn = Color(0xFFCB9E50);
+const _grey = Color(0xFF8E8E93);
+const _border = Color(0xFF333333);
+
+// ─── Mock review model ────────────────────────────────────────────────────────
+
+class MockReview {
+  final String id;
+  final String authorName;
+  final String authorImageUrl;
+  final String serviceTitle;
+  final int rating;
+  final String comment;
+  final int likeCount;
+  final bool isLiked;
+
+  const MockReview({
+    required this.id,
+    required this.authorName,
+    required this.authorImageUrl,
+    required this.serviceTitle,
+    required this.rating,
+    required this.comment,
+    required this.likeCount,
+    required this.isLiked,
+  });
+}
+
+final _mockReviews = [
+  const MockReview(
+    id: '1',
+    authorName: 'juanmateomadrigal',
+    authorImageUrl: 'https://picsum.photos/id/1005/100/100',
+    serviceTitle: 'Reparación de grifería',
+    rating: 5,
+    comment: 'esta es una reseña de prueba',
+    likeCount: 0,
+    isLiked: false,
+  ),
+  const MockReview(
+    id: '2',
+    authorName: 'juanmateomadrigal',
+    authorImageUrl: 'https://picsum.photos/id/1005/100/100',
+    serviceTitle: '',
+    rating: 4,
+    comment: 'funciono',
+    likeCount: 5,
+    isLiked: false,
+  ),
+  const MockReview(
+    id: '3',
+    authorName: 'Emanuel Benavides',
+    authorImageUrl: 'https://picsum.photos/id/1012/100/100',
+    serviceTitle: 'Reparación de grifería',
+    rating: 5,
+    comment: 'Esperemos qu funcione...',
+    likeCount: 5,
+    isLiked: false,
+  ),
+];
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
+class ServiceDetailScreen extends StatefulWidget {
+  final MockService service;
+
+  const ServiceDetailScreen({super.key, required this.service});
+
+  @override
+  State<ServiceDetailScreen> createState() =>
+      _ServiceDetailScreenState();
+}
+
+class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
+  bool _isFollowing = true;
+  bool _isReviewExpanded = false;
+  int _reviewRating = 5;
+  final _reviewController = TextEditingController();
+  late List<MockReview> _reviews;
+
+  @override
+  void initState() {
+    super.initState();
+    _reviews = List.from(_mockReviews);
+  }
+
+  @override
+  void dispose() {
+    _reviewController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final service = mockServices.first;
-
+    final s = widget.service;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8FC),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Stack(
-                children: [
-                  Image.network(
-                    service.imageUrl,
-                    width: double.infinity,
-                    height: 260,
-                    fit: BoxFit.cover,
-                  ),
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white.withValues(alpha: 0.9),
-                      child: const Icon(Icons.arrow_back),
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: _bg,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.maybePop(context),
+        ),
+        title: const Text(
+          'Detalle de Publicación',
+          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Hero image
+            Stack(
+              children: [
+                Image.network(
+                  s.imageUrl,
+                  width: double.infinity,
+                  height: 260,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: GestureDetector(
+                    onTap: () => Navigator.maybePop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
                     ),
                   ),
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white.withValues(alpha: 0.9),
-                      child: const Icon(Icons.favorite_border),
+                ),
+              ],
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title & price
+                  Text(s.title,
+                      style: const TextStyle(
+                          fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white)),
+                  const SizedBox(height: 4),
+                  Text('Desde ${s.price}',
+                      style: const TextStyle(
+                          fontSize: 22, color: _fawn, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  const Text('Descripción',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(height: 4),
+                  Text(s.description,
+                      style: const TextStyle(fontSize: 15, color: _grey, height: 1.5)),
+
+                  const SizedBox(height: 24),
+
+                  // Fixer card
+                  _FixerCard(
+                    isFollowing: _isFollowing,
+                    onFollowToggle: () => setState(() => _isFollowing = !_isFollowing),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Benefits
+                  const _BenefitsRow(),
+
+                  const SizedBox(height: 24),
+
+                  // Review input
+                  _ReviewInputCard(
+                    isExpanded: _isReviewExpanded,
+                    rating: _reviewRating,
+                    controller: _reviewController,
+                    onToggle: () =>
+                        setState(() => _isReviewExpanded = !_isReviewExpanded),
+                    onRatingChanged: (r) => setState(() => _reviewRating = r),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Reviews
+                  _ReviewsSection(reviews: _reviews),
+
+                  const SizedBox(height: 24),
+
+                  // Action buttons
+                  const _ActionButtons(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Fixer card ───────────────────────────────────────────────────────────────
+
+class _FixerCard extends StatelessWidget {
+  final bool isFollowing;
+  final VoidCallback onFollowToggle;
+
+  const _FixerCard({required this.isFollowing, required this.onFollowToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border),
+      ),
+      child: Row(
+        children: [
+          ClipOval(
+            child: Image.network(
+              'https://picsum.photos/id/1005/100/100',
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text('Tu Especialista FixUp',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                Text('Verificado • 4.8 ★',
+                    style: TextStyle(
+                        color: _fawn, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(
+                  'Profesional con más de 5 años de experiencia en servicios para el hogar.',
+                  style: TextStyle(fontSize: 12, color: _grey),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: onFollowToggle,
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: _fawn),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              foregroundColor: _fawn,
+              backgroundColor: Colors.transparent,
+              minimumSize: const Size(0, 34),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              isFollowing ? 'Siguiendo' : 'Seguir',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Benefits ─────────────────────────────────────────────────────────────────
+
+class _BenefitsRow extends StatelessWidget {
+  const _BenefitsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _BenefitItem(icon: Icons.verified_user_outlined, label: 'Garantía'),
+        _BenefitItem(icon: Icons.bolt_outlined, label: 'Rápido'),
+        _BenefitItem(icon: Icons.support_agent_outlined, label: 'Soporte'),
+      ],
+    );
+  }
+}
+
+class _BenefitItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _BenefitItem({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(color: _card, borderRadius: BorderRadius.circular(14)),
+          child: Icon(icon, color: _fawn, size: 30),
+        ),
+        const SizedBox(height: 6),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w500, color: Colors.white)),
+      ],
+    );
+  }
+}
+
+// ─── Review input card ────────────────────────────────────────────────────────
+
+class _ReviewInputCard extends StatelessWidget {
+  final bool isExpanded;
+  final int rating;
+  final TextEditingController controller;
+  final VoidCallback onToggle;
+  final ValueChanged<int> onRatingChanged;
+
+  const _ReviewInputCard({
+    required this.isExpanded,
+    required this.rating,
+    required this.controller,
+    required this.onToggle,
+    required this.onRatingChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  const Icon(Icons.rate_review, color: _fawn, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text('¿Cómo fue tu experiencia?',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white)),
+                  ),
+                  Icon(
+                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (i) {
+                      final sel = i < rating;
+                      return GestureDetector(
+                        onTap: () => onRatingChanged(i + 1),
+                        child: Icon(
+                          sel ? Icons.star : Icons.star_border,
+                          color: sel ? const Color(0xFFFFC107) : _grey,
+                          size: 42,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    maxLines: 3,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Cuéntanos más detalles del servicio...',
+                      hintStyle: const TextStyle(color: _grey),
+                      filled: true,
+                      fillColor: _bg,
+                      contentPadding: const EdgeInsets.all(14),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: _border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: _fawn),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _fawn,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Publicar Reseña',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.white)),
                     ),
                   ),
                 ],
               ),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8F8FC),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Reviews section ──────────────────────────────────────────────────────────
+
+class _ReviewsSection extends StatelessWidget {
+  final List<MockReview> reviews;
+
+  const _ReviewsSection({required this.reviews});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text('Opiniones de la comunidad',
+                style: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: _fawn.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(reviews.length.toString(),
+                  style: const TextStyle(
+                      color: _fawn, fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ...reviews.map((r) => Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: _ReviewCard(review: r),
+            )),
+      ],
+    );
+  }
+}
+
+class _ReviewCard extends StatefulWidget {
+  final MockReview review;
+
+  const _ReviewCard({required this.review});
+
+  @override
+  State<_ReviewCard> createState() => _ReviewCardState();
+}
+
+class _ReviewCardState extends State<_ReviewCard> {
+  late bool _liked;
+  late int _count;
+
+  @override
+  void initState() {
+    super.initState();
+    _liked = widget.review.isLiked;
+    _count = widget.review.likeCount;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipOval(
+                child: Image.network(
+                  widget.review.authorImageUrl,
+                  width: 42,
+                  height: 42,
+                  fit: BoxFit.cover,
                 ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      service.title,
-                      style: const TextStyle(
-                        fontSize: 27,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      service.category,
-                      style: const TextStyle(
-                        color: Color(0xFF5B4BFF),
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    Text(widget.review.authorName,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.bold, color: _fawn)),
+                    if (widget.review.serviceTitle.isNotEmpty)
+                      Text('comentó sobre: ${widget.review.serviceTitle}',
+                          style: const TextStyle(fontSize: 12, color: _fawn)),
                     Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber),
-                        const SizedBox(width: 4),
-                        Text('${service.rating}'),
-                        const SizedBox(width: 18),
-                        const Icon(Icons.location_on_outlined),
-                        const SizedBox(width: 4),
-                        Expanded(child: Text(service.location)),
-                      ],
+                      children: List.generate(5, (i) => Icon(
+                            i < widget.review.rating ? Icons.star : Icons.star_border,
+                            color: i < widget.review.rating
+                                ? const Color(0xFFFFC107)
+                                : _grey,
+                            size: 14,
+                          )),
                     ),
-                    const SizedBox(height: 22),
-                    const Text(
-                      'Descripción',
-                      style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => setState(() {
+                  _liked = !_liked;
+                  _count += _liked ? 1 : -1;
+                }),
+                child: Row(
+                  children: [
+                    Icon(
+                      _liked ? Icons.favorite : Icons.favorite_border,
+                      color: _liked ? Colors.red : _grey,
+                      size: 20,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      service.description,
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    const Text(
-                      'Opiniones',
-                      style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
-                    ),
-                    const SizedBox(height: 10),
-                    ...mockReviews.map(
-                      (review) => Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const CircleAvatar(
-                              radius: 18,
-                              backgroundColor: Color(0xFFE8E6FF),
-                              child: Icon(
-                                Icons.person,
-                                color: Color(0xFF5B4BFF),
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(child: Text(review)),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        Text(
-                          service.price,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF5B4BFF),
-                          ),
-                        ),
-                        const SizedBox(width: 18),
-                        Expanded(child: FixUpButton(text: 'Solicitar servicio')),
-                      ],
-                    ),
+                    const SizedBox(width: 4),
+                    Text(_count.toString(),
+                        style: const TextStyle(fontSize: 14, color: _grey)),
                   ],
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 10),
+          Text(widget.review.comment,
+              style: const TextStyle(fontSize: 14, color: Colors.white, height: 1.4)),
+        ],
       ),
+    );
+  }
+}
+
+// ─── Action buttons ───────────────────────────────────────────────────────────
+
+class _ActionButtons extends StatelessWidget {
+  const _ActionButtons();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _fawn,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+            ),
+            child: const Text('Ir al Pago',
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: OutlinedButton(
+            onPressed: () {},
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: _fawn, width: 1.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              foregroundColor: _fawn,
+            ),
+            child: const Text('Contactar Especialista',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ],
     );
   }
 }
